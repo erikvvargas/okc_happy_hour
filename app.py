@@ -8,6 +8,7 @@ from map import create_map, create_sidebar, create_filters, geocode_address, min
 
 # Initialize the Dash app with Bootstrap for mobile responsiveness
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME])
+server = app.server
 app.title = "OKC Happy Hours"
 
 # Initialize database
@@ -177,4 +178,5 @@ def add_location_callback(n_clicks, name, address, desc, days, time_range, refre
                 name, address, desc, days, time_range, refresh_count)
 
 if __name__ == '__main__':
+
     app.run(host="0.0.0.0", port=8050, debug=True)
