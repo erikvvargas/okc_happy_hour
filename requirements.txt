@@ -6,4 +6,5 @@ plotly
 gunicorn
 setuptools
 dash_bootstrap_components
+geopy
 
