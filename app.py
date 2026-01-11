@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, State, callback_context
+from dash import dcc, html, Input, Output, State, callback_context, dash_table
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import sqlite3
@@ -8,7 +8,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # Initialize the Dash app with Bootstrap for mobile responsiveness
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
 server = app.server
 app.title = "OKC Happy Hours"
 
@@ -115,7 +115,6 @@ def create_map(df, dark_mode=False):
         
         # Update marker appearance
         fig.update_traces(
-            # marker=dict(size=14, color='#e74c3c'),
             marker = dict(size=14),
             hovertemplate='%{customdata[0]}<extra></extra>'
         )
@@ -174,13 +173,13 @@ sidebar = html.Div([
         dbc.Checklist(
             id='input-days',
             options=[
-                {'label': 'Mon', 'value': 'Mon'},
-                {'label': 'Tue', 'value': 'Tue'},
-                {'label': 'Wed', 'value': 'Wed'},
-                {'label': 'Thu', 'value': 'Thu'},
-                {'label': 'Fri', 'value': 'Fri'},
-                {'label': 'Sat', 'value': 'Sat'},
-                {'label': 'Sun', 'value': 'Sun'},
+                {'label': 'Mon', 'value': 'Monday'},
+                {'label': 'Tue', 'value': 'Tuesday'},
+                {'label': 'Wed', 'value': 'Wednesday'},
+                {'label': 'Thu', 'value': 'Thursday'},
+                {'label': 'Fri', 'value': 'Friday'},
+                {'label': 'Sat', 'value': 'Saturday'},
+                {'label': 'Sun', 'value': 'Sunday'},
             ],
             value=[],
             className="mb-3"
@@ -217,113 +216,117 @@ sidebar = html.Div([
     ),
 ], className="mb-3")
 
+# Navigation bar
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("Map", href="/", id="map-link")),
+        dbc.NavItem(dbc.NavLink("Manage", href="/manage", id="manage-link")),
+    ],
+    brand="🍺 OKC Happy Hours",
+    brand_href="/",
+    color="primary",
+    dark=True,
+    className="mb-3"
+)
+
+# Map page layout
+map_page = html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                sidebar
+            ], width=12, className="mb-2")
+        ]),
+        
+        dbc.Row([
+            dbc.Col([
+                html.Label("Day of Week:", className="fw-bold small"),
+                dcc.Dropdown(
+                    id='day-filter',
+                    options=[
+                        {'label': 'All Days', 'value': 'All'},
+                        {'label': 'Monday', 'value': 'Monday'},
+                        {'label': 'Tuesday', 'value': 'Tuesday'},
+                        {'label': 'Wednesday', 'value': 'Wednesday'},
+                        {'label': 'Thursday', 'value': 'Thursday'},
+                        {'label': 'Friday', 'value': 'Friday'},
+                        {'label': 'Saturday', 'value': 'Saturday'},
+                        {'label': 'Sunday', 'value': 'Sunday'},
+                    ],
+                    value='All',
+                    clearable=False,
+                    className="mb-3"
+                )
+            ], xs=12, md=6),
+            
+            dbc.Col([
+                html.Label("Time:", className="fw-bold small"),
+                dcc.Dropdown(
+                    id='time-filter',
+                    options=[
+                        {'label': 'All Times', 'value': ''},
+                        {'label': '3:00 PM', 'value': '15:00'},
+                        {'label': '4:00 PM', 'value': '16:00'},
+                        {'label': '5:00 PM', 'value': '17:00'},
+                        {'label': '6:00 PM', 'value': '18:00'},
+                        {'label': '7:00 PM', 'value': '19:00'},
+                        {'label': '8:00 PM', 'value': '20:00'},
+                    ],
+                    value='',
+                    clearable=False,
+                    className="mb-3"
+                )
+            ], xs=12, md=6),
+        ]),
+        
+        dbc.Row([
+            dbc.Col([
+                dcc.Graph(
+                    id='map', 
+                    config={'displayModeBar': False},
+                    style={'height': '70vh', 'minHeight': '400px'}
+                )
+            ], width=12)
+        ])
+    ], fluid=True, className="px-3 px-md-4 py-2")
+])
+
+# Management page layout
+manage_page = html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                html.H3("Manage Locations", className="mb-4"),
+                html.Div(id='manage-feedback', className="mb-3"),
+                html.Div(id='locations-table-container')
+            ])
+        ])
+    ], fluid=True, className="px-3 px-md-4 py-4")
+])
+
 # App Layout
 app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
     dcc.Store(id='theme-store', data='light'),
     dcc.Store(id='refresh-trigger', data=0),
+    dcc.Store(id='manage-refresh', data=0),
     
     html.Div(id='theme-container', children=[
-        dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    html.Div([
-                        html.H1("🍺 OKC Happy Hours", className="text-center my-3 mb-2"),
-                        # dbc.Button(
-                        #     html.I(id='theme-icon', className="fas fa-moon"),
-                        #     id="theme-toggle",
-                        #     color="secondary",
-                        #     size="sm",
-                        #     className="position-absolute top-0 end-0 m-3",
-                        #     outline=True
-                        # )
-                    ], style={"position": "relative"})
-                ])
-            ]),
-            
-            dbc.Row([
-                dbc.Col([
-                    sidebar
-                ], width=12, className="mb-2")
-            ]),
-            
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Day of Week:", className="fw-bold small"),
-                    dcc.Dropdown(
-                        id='day-filter',
-                        options=[
-                            {'label': 'All Days', 'value': 'All'},
-                            {'label': 'Monday', 'value': 'Mon'},
-                            {'label': 'Tuesday', 'value': 'Tue'},
-                            {'label': 'Wednesday', 'value': 'Wed'},
-                            {'label': 'Thursday', 'value': 'Thu'},
-                            {'label': 'Friday', 'value': 'Fri'},
-                            {'label': 'Saturday', 'value': 'Sat'},
-                            {'label': 'Sunday', 'value': 'Sun'},
-                        ],
-                        value='All',
-                        clearable=False,
-                        className="mb-3"
-                    )
-                ], xs=12, md=6),
-                
-                dbc.Col([
-                    html.Label("Time:", className="fw-bold small"),
-                    dcc.Dropdown(
-                        id='time-filter',
-                        options=[
-                            {'label': 'All Times', 'value': ''},
-                            {'label': '3:00 PM', 'value': '15:00'},
-                            {'label': '4:00 PM', 'value': '16:00'},
-                            {'label': '5:00 PM', 'value': '17:00'},
-                            {'label': '6:00 PM', 'value': '18:00'},
-                            {'label': '7:00 PM', 'value': '19:00'},
-                            {'label': '8:00 PM', 'value': '20:00'},
-                        ],
-                        value='',
-                        clearable=False,
-                        className="mb-3"
-                    )
-                ], xs=12, md=6),
-            ]),
-            
-            dbc.Row([
-                dbc.Col([
-                    dcc.Graph(
-                        id='map', 
-                        config={'displayModeBar': False},
-                        style={'height': '70vh', 'minHeight': '400px'}
-                    )
-                ], width=12)
-            ])
-        ], fluid=True, className="px-3 px-md-4 py-2")
+        navbar,
+        html.Div(id='page-content')
     ])
 ], style={"minHeight": "100vh"})
 
 # Callbacks
-# @app.callback(
-#     [Output('theme-container', 'style'),
-#      Output('theme-icon', 'className'),
-#      Output('theme-store', 'data')],
-#     Input('theme-toggle', 'n_clicks'),
-#     State('theme-store', 'data'),
-#     prevent_initial_call=True
-# )
-# def toggle_theme(n_clicks, current_theme):
-#     if n_clicks:
-#         if current_theme == 'light':
-#             return (
-#                 {'backgroundColor': '#1a1a1a', 'color': '#ffffff', 'minHeight': '100vh'},
-#                 'fas fa-sun',
-#                 'dark'
-#             )
-#         else:
-#             return (
-#                 {'backgroundColor': '#ffffff', 'color': '#000000', 'minHeight': '100vh'},
-#                 'fas fa-moon',
-#                 'light'
-#             )
-#     return dash.no_update
+@app.callback(
+    Output('page-content', 'children'),
+    Input('url', 'pathname')
+)
+def display_page(pathname):
+    if pathname == '/manage':
+        return manage_page
+    else:
+        return map_page
 
 @app.callback(
     Output("sidebar-collapse", "is_open"),
@@ -412,6 +415,130 @@ def add_location(n_clicks, name, address, desc, days, time_range, refresh_count)
         return (dbc.Alert(f"Error: {str(e)}", color="danger"), 
                 name, address, desc, days, time_range, refresh_count)
 
+@app.callback(
+    Output('locations-table-container', 'children'),
+    Input('manage-refresh', 'data')
+)
+def update_locations_table(refresh):
+    conn = sqlite3.connect('happy_hours.db')
+    df = pd.read_sql_query("SELECT * FROM locations ORDER BY name", conn)
+    conn.close()
+    
+    if df.empty:
+        return dbc.Alert("No locations found.", color="info")
+    
+    # Create table with edit/delete buttons
+    table_data = []
+    for _, row in df.iterrows():
+        table_data.append(
+            html.Tr([
+                html.Td(row['name']),
+                html.Td(row['address']),
+                html.Td(
+                    dbc.Textarea(
+                        id={'type': 'desc-input', 'index': row['id']},
+                        value=row['description'],
+                        rows=2,
+                        style={'width': '100%', 'fontSize': '0.9rem'}
+                    )
+                ),
+                html.Td(row['days']),
+                html.Td(f"{row['start_time']} - {row['end_time']}"),
+                html.Td([
+                    dbc.Button(
+                        "Save",
+                        id={'type': 'save-btn', 'index': row['id']},
+                        color="primary",
+                        size="sm",
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Delete",
+                        id={'type': 'delete-btn', 'index': row['id']},
+                        color="danger",
+                        size="sm"
+                    )
+                ])
+            ])
+        )
+    
+    return dbc.Table([
+        html.Thead(
+            html.Tr([
+                html.Th("Name"),
+                html.Th("Address"),
+                html.Th("Description"),
+                html.Th("Days"),
+                html.Th("Time"),
+                html.Th("Actions", style={'width': '180px'})
+            ])
+        ),
+        html.Tbody(table_data)
+    ], bordered=True, hover=True, responsive=True, striped=True)
+
+@app.callback(
+    [Output('manage-feedback', 'children'),
+     Output('manage-refresh', 'data')],
+    [Input({'type': 'save-btn', 'index': dash.dependencies.ALL}, 'n_clicks'),
+     Input({'type': 'delete-btn', 'index': dash.dependencies.ALL}, 'n_clicks')],
+    [State({'type': 'desc-input', 'index': dash.dependencies.ALL}, 'value'),
+     State({'type': 'desc-input', 'index': dash.dependencies.ALL}, 'id'),
+     State('manage-refresh', 'data')],
+    prevent_initial_call=True
+)
+def handle_table_actions(save_clicks, delete_clicks, descriptions, desc_ids, refresh_count):
+    ctx = callback_context
+    
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id']
+    
+    try:
+        # Parse which button was clicked
+        if 'save-btn' in triggered_id:
+            # Extract the index from triggered_id
+            import json
+            button_info = json.loads(triggered_id.split('.')[0])
+            location_id = button_info['index']
+            
+            # Find the corresponding description
+            desc_value = None
+            for i, desc_id in enumerate(desc_ids):
+                if desc_id['index'] == location_id:
+                    desc_value = descriptions[i]
+                    break
+            
+            if desc_value is not None:
+                conn = sqlite3.connect('happy_hours.db')
+                c = conn.cursor()
+                c.execute("UPDATE locations SET description = ? WHERE id = ?", 
+                         (desc_value, location_id))
+                conn.commit()
+                conn.close()
+                
+                return (dbc.Alert("Description updated successfully!", color="success", duration=3000),
+                        refresh_count + 1)
+        
+        elif 'delete-btn' in triggered_id:
+            import json
+            button_info = json.loads(triggered_id.split('.')[0])
+            location_id = button_info['index']
+            
+            conn = sqlite3.connect('happy_hours.db')
+            c = conn.cursor()
+            c.execute("DELETE FROM locations WHERE id = ?", (location_id,))
+            conn.commit()
+            conn.close()
+            
+            return (dbc.Alert("Location deleted successfully!", color="success", duration=3000),
+                    refresh_count + 1)
+    
+    except Exception as e:
+        return (dbc.Alert(f"Error: {str(e)}", color="danger", duration=5000),
+                refresh_count)
+    
+    return dash.no_update, dash.no_update
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8050, debug=True)
-
