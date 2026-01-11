@@ -253,13 +253,13 @@ app.layout = html.Div([
                         id='day-filter',
                         options=[
                             {'label': 'All Days', 'value': 'All'},
-                            {'label': 'Monday', 'value': 'Monday'},
-                            {'label': 'Tuesday', 'value': 'Tuesday'},
-                            {'label': 'Wednesday', 'value': 'Wednesday'},
-                            {'label': 'Thursday', 'value': 'Thursday'},
-                            {'label': 'Friday', 'value': 'Friday'},
-                            {'label': 'Saturday', 'value': 'Saturday'},
-                            {'label': 'Sunday', 'value': 'Sunday'},
+                            {'label': 'Monday', 'value': 'Mon'},
+                            {'label': 'Tuesday', 'value': 'Tue'},
+                            {'label': 'Wednesday', 'value': 'Wed'},
+                            {'label': 'Thursday', 'value': 'Thu'},
+                            {'label': 'Friday', 'value': 'Fri'},
+                            {'label': 'Saturday', 'value': 'Sat'},
+                            {'label': 'Sunday', 'value': 'Sun'},
                         ],
                         value='All',
                         clearable=False,
@@ -414,3 +414,4 @@ def add_location(n_clicks, name, address, desc, days, time_range, refresh_count)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8050, debug=True)
+
