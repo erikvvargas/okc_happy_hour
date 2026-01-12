@@ -325,20 +325,22 @@ login_form = dbc.Card(
 @app.callback(
     Output("auth-store", "data"),
     Output("login-feedback", "children"),
+    Output("url", "pathname"),
     Input("login-btn", "n_clicks"),
     State("password-input", "value"),
     prevent_initial_call=True
 )
 def login(n_clicks, password):
     if password == os.getenv("ADMIN_PASSWORD"):
-        return True, dbc.Alert("Login successful", color="success")
-    return False, dbc.Alert("Incorrect password", color="danger")
+        return True, dbc.Alert("Login successful", color="success"), "/manage"
+
+    return False, dbc.Alert("Incorrect password", color="danger"), dash.no_update
 
 
 @app.callback(
     Output('page-content', 'children'),
     Input('url', 'pathname'),
-    State('auth-store', 'data')
+    Input('auth-store', 'data')
 )
 def display_page(pathname, is_authed):
     if pathname == "/manage":
