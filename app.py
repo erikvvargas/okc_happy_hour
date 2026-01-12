@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 from datetime import datetime, time
 import pandas as pd
+import os
 from geopy.geocoders import Nominatim
 from data_store import (
     load_locations,
@@ -80,15 +81,16 @@ def create_map(df, dark_mode=False):
             zoom=12,
             height=800
         )
-        fig.update_traces(cluster=dict(enabled=True))
         # Update marker appearance
         fig.update_traces(
-            marker = dict(size=14),
+            marker = dict(size=14, line=dict(width=2,
+                                             color='DarkSlateGrey')),
             hovertemplate='%{customdata[0]}<extra></extra>'
         )
         
         # Customize hover data to show our formatted text
         fig.update_traces(customdata=df[['hover_text']])
+        fig.update_traces(cluster=dict(enabled=True))
     else:
         # Empty map centered on OKC
         empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
@@ -97,10 +99,10 @@ def create_map(df, dark_mode=False):
             lat='lat',
             lon='lon',
             zoom=12,
-            height=800
+            height=600
         )
         fig.update_traces(marker=dict(size=0))
-        fig.update_traces(cluster=dict(enabled=True))
+        # fig.update_traces(cluster=dict(enabled=True))
     # Set map style based on theme
     map_style = "carto-darkmatter" if dark_mode else "open-street-map"
     
@@ -188,7 +190,7 @@ sidebar = html.Div([
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Map", href="/", id="map-link")),
-        dbc.NavItem(dbc.NavLink("Manage", href="/manage", id="manage-link")),
+        # dbc.NavItem(dbc.NavLink("Manage", href="/manage", id="manage-link")),
     ],
     brand="🍺 OKC Happy Hours",
     brand_href="/",
@@ -200,11 +202,11 @@ navbar = dbc.NavbarSimple(
 # Map page layout
 map_page = html.Div([
     dbc.Container([
-        dbc.Row([
-            dbc.Col([
-                sidebar
-            ], width=12, className="mb-2")
-        ]),
+        # dbc.Row([
+        #     dbc.Col([
+        #         sidebar
+        #     ], width=12, className="mb-2")
+        # ]),
         
         dbc.Row([
             dbc.Col([
@@ -264,6 +266,11 @@ manage_page = html.Div([
     dbc.Container([
         dbc.Row([
             dbc.Col([
+                sidebar
+            ], width=12, className="mb-4")
+        ]),
+        dbc.Row([
+            dbc.Col([
                 html.H3("Manage Locations", className="mb-4"),
                 html.Div(id='manage-feedback', className="mb-3"),
                 html.Div(id='locations-table-container')
@@ -278,23 +285,68 @@ app.layout = html.Div([
     dcc.Store(id='theme-store', data='light'),
     dcc.Store(id='refresh-trigger', data=0),
     dcc.Store(id='manage-refresh', data=0),
-    
+    dcc.Store(id="auth-store", data=False)
+
     html.Div(id='theme-container', children=[
         navbar,
         html.Div(id='page-content')
     ])
 ], style={"minHeight": "100vh"})
 
+# login form for admin auth
+login_form = dbc.Card(
+    dbc.CardBody([
+        html.H4("Admin Login", className="mb-3"),
+        dbc.Input(
+            id="password-input",
+            type="password",
+            placeholder="Enter admin password",
+            className="mb-2"
+        ),
+        dbc.Button("Login", id="login-btn", color="primary"),
+        html.Div(id="login-feedback", className="mt-2")
+    ]),
+    style={"maxWidth": "400px", "margin": "auto"}
+)
+
+
 # Callbacks
+# @app.callback(
+#     Output('page-content', 'children'),
+#     Input('url', 'pathname')
+# )
+# def display_page(pathname):
+#     if pathname == '/manage':
+#         return manage_page
+#     else:
+#         return map_page
+
+
+@app.callback(
+    Output("auth-store", "data"),
+    Output("login-feedback", "children"),
+    Input("login-btn", "n_clicks"),
+    State("password-input", "value"),
+    prevent_initial_call=True
+)
+def login(n_clicks, password):
+    if password == os.getenv("ADMIN_PASSWORD"):
+        return True, dbc.Alert("Login successful", color="success")
+    return False, dbc.Alert("Incorrect password", color="danger")
+
+
 @app.callback(
     Output('page-content', 'children'),
-    Input('url', 'pathname')
+    Input('url', 'pathname'),
+    State('auth-store', 'data')
 )
-def display_page(pathname):
-    if pathname == '/manage':
-        return manage_page
-    else:
-        return map_page
+def display_page(pathname, is_authed):
+    if pathname == "/manage":
+        if is_authed:
+            return manage_page
+        return login_form
+    return map_page
+
 
 @app.callback(
     Output("sidebar-collapse", "is_open"),
