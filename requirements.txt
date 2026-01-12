@@ -7,4 +7,5 @@ gunicorn
 setuptools
 dash_bootstrap_components
 geopy
-
+gspread
+google-auth
