@@ -81,6 +81,7 @@ def create_map(df, dark_mode=False):
             zoom=12,
             height=800
         )
+        fig.update_traces(cluster=dict(enabled=True))
         
         # Update marker appearance
         # fig.update_traces(
@@ -97,7 +98,6 @@ def create_map(df, dark_mode=False):
         )
         # Customize hover data to show our formatted text
         fig.update_traces(customdata=df[['hover_text']])
-        #fig.update_traces(cluster=dict(enabled=True))
     else:
         # Empty map centered on OKC
         empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
