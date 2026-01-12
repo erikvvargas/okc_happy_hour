@@ -81,13 +81,20 @@ def create_map(df, dark_mode=False):
             zoom=12,
             height=800
         )
+        
         # Update marker appearance
+        # fig.update_traces(
+        #     marker = dict(size=14, line=dict(width=2,
+        #                                      color='DarkSlateGrey')),
+        #     hovertemplate='%{customdata[0]}<extra></extra>'
+        # )
+
+
+         # Update marker appearance
         fig.update_traces(
-            marker = dict(size=14, line=dict(width=2,
-                                             color='DarkSlateGrey')),
+            marker = dict(size=14),
             hovertemplate='%{customdata[0]}<extra></extra>'
         )
-        
         # Customize hover data to show our formatted text
         fig.update_traces(customdata=df[['hover_text']])
         #fig.update_traces(cluster=dict(enabled=True))
