@@ -80,7 +80,7 @@ def create_map(df, dark_mode=False):
             zoom=12,
             height=800
         )
-        
+        fig.update_traces(cluster=dict(enabled=True))
         # Update marker appearance
         fig.update_traces(
             marker = dict(size=14),
@@ -100,7 +100,7 @@ def create_map(df, dark_mode=False):
             height=800
         )
         fig.update_traces(marker=dict(size=0))
-    
+        fig.update_traces(cluster=dict(enabled=True))
     # Set map style based on theme
     map_style = "carto-darkmatter" if dark_mode else "open-street-map"
     
