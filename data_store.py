@@ -1,12 +1,23 @@
 import gspread
 import pandas as pd
-from google.auth import default
+import os
+import json
+from google.oauth2.service_account import Credentials
+
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 SHEET_NAME = "happy_hour_data"
 WORKSHEET_NAME = "Sheet1"
 
 def get_client():
-    creds, _ = default(scopes=["https://www.googleapis.com/auth/spreadsheets"])
+    sa_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+
+    if not sa_json:
+        raise RuntimeError("Missing GOOGLE_SERVICE_ACCOUNT_JSON environment variable")
+
+    creds_dict = json.loads(sa_json)
+    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+
     return gspread.authorize(creds)
 
 def get_worksheet():
