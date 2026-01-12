@@ -285,7 +285,7 @@ app.layout = html.Div([
     dcc.Store(id='theme-store', data='light'),
     dcc.Store(id='refresh-trigger', data=0),
     dcc.Store(id='manage-refresh', data=0),
-    dcc.Store(id="auth-store", data=False)
+    dcc.Store(id="auth-store", data=False),
 
     html.Div(id='theme-container', children=[
         navbar,
