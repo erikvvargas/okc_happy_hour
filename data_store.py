@@ -2,7 +2,7 @@ import gspread
 import pandas as pd
 from google.auth import default
 
-SHEET_NAME = "OKC Happy Hours"
+SHEET_NAME = "happy_hour_data"
 WORKSHEET_NAME = "Sheet1"
 
 def get_client():
