@@ -90,7 +90,7 @@ def create_map(df, dark_mode=False):
         
         # Customize hover data to show our formatted text
         fig.update_traces(customdata=df[['hover_text']])
-        fig.update_traces(cluster=dict(enabled=True))
+        #fig.update_traces(cluster=dict(enabled=True))
     else:
         # Empty map centered on OKC
         empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
@@ -102,7 +102,7 @@ def create_map(df, dark_mode=False):
             height=600
         )
         fig.update_traces(marker=dict(size=0))
-        # fig.update_traces(cluster=dict(enabled=True))
+        # #fig.update_traces(cluster=dict(enabled=True))
     # Set map style based on theme
     map_style = "carto-darkmatter" if dark_mode else "open-street-map"
     
