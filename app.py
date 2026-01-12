@@ -373,12 +373,16 @@ def update_time_display(value):
 
 @app.callback(
     Output('map', 'figure'),
-    [Input('day-filter', 'value'),
-     Input('time-filter', 'value'),
-     Input('refresh-trigger', 'data'),
-     Input('theme-store', 'data')]
+    Input('day-filter', 'value'),
+    Input('time-filter', 'value'),
+    Input('refresh-trigger', 'data'),
+    Input('theme-store', 'data'),
+    Input('url', 'pathname'),   # 👈 ADD THIS
 )
-def update_map(day, time, refresh, theme):
+def update_map(day, time, refresh, theme, pathname):
+    if pathname != "/":
+        raise dash.exceptions.PreventUpdate
+
     df = get_locations(day, time if time else None)
     dark_mode = theme == 'dark'
     return create_map(df, dark_mode)
