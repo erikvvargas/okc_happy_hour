@@ -4,8 +4,10 @@ import os
 import json
 from google.oauth2.service_account import Credentials
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 SHEET_NAME = "happy_hour_data"
 WORKSHEET_NAME = "Sheet1"
 
