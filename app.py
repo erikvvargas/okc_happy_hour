@@ -13,6 +13,8 @@ from data_store import (
     delete_location
 )
 
+px.set_mapbox_access_token("pk.eyJ1IjoiZXZhcmdhczE1IiwiYSI6ImNta2MxMjRzMDBiNGszZG9iYXpxNTNucHIifQ.AqUzoiT_Nafbdp9sLuQKfA")
+
 # Initialize the Dash app with Bootstrap for mobile responsiveness
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME], suppress_callback_exceptions=True)
 server = app.server
@@ -111,7 +113,7 @@ def create_map(df, dark_mode=False):
 
 
     fig.update_layout(
-        mapbox_style="open-street-map",
+        mapbox_style="streets",
         margin=dict(l=0, r=0, t=0, b=0)
     )
 
