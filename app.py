@@ -99,7 +99,7 @@ def create_map(df, dark_mode=False):
         hover_data={
             "lat": False,
             "lon": False,
-            "name": True
+            "name": False
         },
         custom_data=["happy_hour", "description", "address"],
         zoom=12,
