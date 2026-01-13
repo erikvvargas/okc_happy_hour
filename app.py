@@ -94,22 +94,21 @@ def create_map(df, dark_mode=False):
         lat="lat",
         lon="lon",
         hover_name="name",
-        hover_data={},
-        custom_data=["happy_hour", "address"],
+        hover_data={
+            "lat": False,
+            "lon": False,
+            "name": True
+        },
+        custom_data=["happy_hour", "description", "address"],
         zoom=12,
         height=600
     )
 
     fig.update_traces(
-        marker=dict(size=14),
-        cluster=dict(enabled=True)
+        marker=dict(size=14)
+        # cluster=dict(enabled=True)
     )   
-        # Update marker appearance
-        # fig.update_traces(
-        #     marker = dict(size=14, line=dict(width=2,
-        #                                      color='black')),
-        #     hovertemplate='%{customdata[0]}<extra></extra>'
-        # )
+
 
     fig.update_layout(
         mapbox_style="open-street-map",
@@ -117,37 +116,7 @@ def create_map(df, dark_mode=False):
     )
 
     return fig
-    #      # Update marker appearance
-    #     fig.update_traces(
-    #         marker = dict(size=14),
-    #         hovertemplate='%{customdata[0]}<extra></extra>'
-    #     )
-    #     # Customize hover data to show our formatted text
-    #     fig.update_traces(customdata=df[['hover_text']])
-    # else:
-    #     # Empty map centered on OKC
-    #     empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
-    #     fig = px.scatter_mapbox(
-    #         empty_df,
-    #         lat='lat',
-    #         lon='lon',
-    #         zoom=12,
-    #         height=600
-    #     )
-    #     fig.update_traces(marker=dict(size=0))
-    #     # #fig.update_traces(cluster=dict(enabled=True))
-    # # Set map style based on theme
-    # map_style = "carto-darkmatter" if dark_mode else "open-street-map"
-    
-    # fig.update_layout(
-    #     mapbox_style=map_style,
-    #     margin=dict(l=0, r=0, t=0, b=0),
-    #     showlegend=False,
-    #     paper_bgcolor='rgba(0,0,0,0)',
-    #     plot_bgcolor='rgba(0,0,0,0)'
-    # )
-    
-    # return fig
+
 
 # Sidebar for adding locations
 sidebar = html.Div([
@@ -288,7 +257,7 @@ map_page = html.Div([
                     id='map', 
                     config={
                         'displayModeBar': False,
-                        'scrollZoom': False
+                        'scrollZoom': True
                         },
                     style={'height': '70vh', 'minHeight': '400px'}
                 )
@@ -492,7 +461,8 @@ def show_location(clickData, close_mobile, close_desktop, device, mobile_style, 
     custom = p.get("customdata", [])
 
     happy_hour = custom[0] if len(custom) > 0 else "N/A"
-    address = custom[1] if len(custom) > 1 else "N/A"
+    description = custom[1] if len(custom) > 1 else "N/A"
+    address = custom[2] if len(custom) > 2 else "N/A"
 
     # -------------------------
     # Build panel content
@@ -500,6 +470,7 @@ def show_location(clickData, close_mobile, close_desktop, device, mobile_style, 
     content = html.Div([
         html.H3(p.get("hovertext", "Location")),
         html.P(f"Happy Hour: {happy_hour}"),
+        html.P(f"Description: {description}"),
         html.P(f"Address: {address}")
     ])
 
