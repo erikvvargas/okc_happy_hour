@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, State, callback_context, dash_table
+from dash import dcc, html, Input, Output, State, callback_context, dash_table, clientside_callback
 import dash_bootstrap_components as dbc
 import plotly.express as px
 from datetime import datetime, time
@@ -260,7 +260,10 @@ map_page = html.Div([
             dbc.Col([
                 dcc.Graph(
                     id='map', 
-                    config={'displayModeBar': False},
+                    config={
+                        'displayModeBar': False,
+                        'scrollZoom': False
+                        },
                     style={'height': '70vh', 'minHeight': '400px'}
                 )
             ], width=12)
@@ -287,18 +290,108 @@ manage_page = html.Div([
 ])
 
 # App Layout
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    dcc.Store(id='theme-store', data='light'),
-    dcc.Store(id='refresh-trigger', data=0),
-    dcc.Store(id='manage-refresh', data=0),
-    dcc.Store(id="auth-store", data=False),
+# app.layout = html.Div([
+#     dcc.Location(id='url', refresh=False),
+#     dcc.Store(id='theme-store', data='light'),
+#     dcc.Store(id='refresh-trigger', data=0),
+#     dcc.Store(id='manage-refresh', data=0),
+#     dcc.Store(id="auth-store", data=False),
+#     dcc.Store(id="device-type"),
+#     html.Div(id='theme-container', children=[
+#         navbar,
+#         html.Div(id='page-content')
+#     ])
+# ], style={"minHeight": "100vh"})
 
-    html.Div(id='theme-container', children=[
-        navbar,
-        html.Div(id='page-content')
-    ])
-], style={"minHeight": "100vh"})
+
+app.layout = html.Div(
+
+    children=[
+
+        dcc.Location(id='url', refresh=False),
+
+        # ------------------
+        # Stores
+        # ------------------
+        dcc.Store(id='theme-store', data='light'),
+        dcc.Store(id='refresh-trigger', data=0),
+        dcc.Store(id='manage-refresh', data=0),
+        dcc.Store(id="auth-store", data=False),
+        dcc.Store(id="device-type"),
+
+        # ------------------
+        # Main Page Shell
+        # ------------------
+        html.Div(
+            id='theme-container',
+            children=[
+                navbar,
+                html.Div(id='page-content')  # map_page renders here
+            ]
+        ),
+
+        # ==================
+        # Mobile Bottom Drawer (GLOBAL)
+        # ==================
+        html.Div(
+            id="mobile-drawer",
+            children=[
+                html.Div(  # drag handle
+                    style={
+                        "width": "40px",
+                        "height": "4px",
+                        "background": "#ccc",
+                        "borderRadius": "4px",
+                        "margin": "8px auto"
+                    }
+                ),
+                html.Button("✕", id="close-mobile", style={"float": "right"}),
+                html.Div(id="mobile-drawer-content")
+            ],
+            style={
+                "position": "fixed",
+                "bottom": "-70vh",
+                "left": "0",
+                "right": "0",
+                "height": "70vh",
+                "backgroundColor": "white",
+                "zIndex": "1000",
+                "padding": "16px",
+                "boxShadow": "0 -4px 16px rgba(0,0,0,0.25)",
+                "transition": "bottom 0.35s ease-in-out",
+                "borderTopLeftRadius": "16px",
+                "borderTopRightRadius": "16px"
+            }
+        ),
+
+        # ==================
+        # Desktop Sidebar (GLOBAL)
+        # ==================
+        html.Div(
+            id="desktop-sidebar",
+            children=[
+                html.Button("✕", id="close-desktop"),
+                html.Div(id="desktop-sidebar-content")
+            ],
+            style={
+                "position": "fixed",
+                "top": "0",
+                "left": "-350px",
+                "width": "350px",
+                "height": "100vh",
+                "backgroundColor": "white",
+                "zIndex": "1000",
+                "padding": "16px",
+                "boxShadow": "4px 0 16px rgba(0,0,0,0.25)",
+                "transition": "left 0.35s ease-in-out"
+            }
+        ),
+    ],
+
+    style={"minHeight": "100vh"}
+)
+
+
 
 # login form for admin auth
 login_form = dbc.Card(
@@ -318,6 +411,17 @@ login_form = dbc.Card(
 
 
 # Callbacks
+
+app.clientside_callback(
+    """
+    function(_) {
+        const width = window.innerWidth;
+        return width < 768 ? "mobile" : "desktop";
+    }
+    """,
+    Output("device-type", "data"),
+    Input("map", "id")  
+)
 # @app.callback(
 #     Output('page-content', 'children'),
 #     Input('url', 'pathname')
@@ -327,6 +431,48 @@ login_form = dbc.Card(
 #         return manage_page
 #     else:
 #         return map_page
+
+@app.callback(
+    Output("mobile-drawer", "style"),
+    Output("mobile-drawer-content", "children"),
+    Output("desktop-sidebar", "style"),
+    Output("desktop-sidebar-content", "children"),
+    Input("map", "clickData"),
+    Input("close-mobile", "n_clicks"),
+    Input("close-desktop", "n_clicks"),
+    State("device-type", "data"),
+    State("mobile-drawer", "style"),
+    State("desktop-sidebar", "style"),
+    prevent_initial_call=True
+)
+def show_location(clickData, close_mobile, close_desktop, device, mobile_style, desktop_style):
+
+    ctx = dash.callback_context.triggered_id
+
+    # Close actions
+    if ctx in ["close-mobile", "close-desktop"]:
+        mobile_style["bottom"] = "-70vh"
+        desktop_style["left"] = "-350px"
+        return mobile_style, dash.no_update, desktop_style, dash.no_update
+
+    if not clickData:
+        raise dash.exceptions.PreventUpdate
+
+    p = clickData["points"][0]
+
+    content = html.Div([
+        html.H3(p["hovertext"]),
+        html.P(f"Happy Hour: {p['customdata'][0]}"),
+        html.P(f"Address: {p['customdata'][1]}"),
+    ])
+
+    if device == "mobile":
+        mobile_style["bottom"] = "0"
+        return mobile_style, content, desktop_style, dash.no_update
+
+    else:
+        desktop_style["left"] = "0"
+        return mobile_style, dash.no_update, desktop_style, content
 
 
 @app.callback(
