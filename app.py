@@ -72,14 +72,25 @@ def create_map(df, dark_mode=False):
             "Time: " + df['start_time'] + " - " + df['end_time']
         )
         
+        # fig = px.scatter_map(
+        #     df,
+        #     lat='lat',
+        #     lon='lon',
+        #     hover_name='name',
+        #     hover_data={'lat': False, 'lon': False, 'hover_text': True},
+        #     zoom=12,
+        #     height=800
+        # )
+
         fig = px.scatter_map(
             df,
             lat='lat',
             lon='lon',
             hover_name='name',
-            hover_data={'lat': False, 'lon': False, 'hover_text': True},
+            hover_data={},
+            custom_data=['happy_hour', 'address'],
             zoom=12,
-            height=800
+            height=600
         )
         # fig.update_traces(cluster=dict(enabled=True))
         
@@ -458,13 +469,28 @@ def show_location(clickData, close_mobile, close_desktop, device, mobile_style, 
     if not clickData:
         raise dash.exceptions.PreventUpdate
 
+    # -------------------------
+    # Extract point data SAFELY
+    # -------------------------
     p = clickData["points"][0]
 
+    custom = p.get("customdata", [])
+
+    happy_hour = custom[0] if len(custom) > 0 else "N/A"
+    address = custom[1] if len(custom) > 1 else "N/A"
+
+    # -------------------------
+    # Build panel content
+    # -------------------------
     content = html.Div([
-        html.H3(p["hovertext"]),
-        html.P(f"Happy Hour: {p['customdata'][0]}"),
-        html.P(f"Address: {p['customdata'][1]}"),
+        html.H3(p.get("hovertext", "Location")),
+        html.P(f"Happy Hour: {happy_hour}"),
+        html.P(f"Address: {address}")
     ])
+
+    # -------------------------
+    # Open correct panel
+    # -------------------------
 
     if device == "mobile":
         mobile_style["bottom"] = "0"
