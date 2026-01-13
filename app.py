@@ -107,8 +107,8 @@ def create_map(df, dark_mode=False):
     )
 
     fig.update_traces(
-        marker=dict(size=14),
-        cluster=dict(enabled=True)
+        marker=dict(size=14)
+        #cluster=dict(enabled=True)
     )   
 
 
