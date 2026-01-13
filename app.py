@@ -62,16 +62,23 @@ def get_locations(day_filter=None, time_filter=None):
 
 
 def create_map(df, dark_mode=False):
-    if not df.empty:
-        # Create hover text
-        df['hover_text'] = (
-            "<b>" + df['name'] + "</b><br>" +
-            df['address'] + "<br>" +
-            df['description'] + "<br>" +
-            "Days: " + df['days'] + "<br>" +
-            "Time: " + df['start_time'] + " - " + df['end_time']
-        )
-        
+    # if not df.empty:
+    #     # Create hover text
+    #     df['hover_text'] = (
+    #         "<b>" + df['name'] + "</b><br>" +
+    #         df['address'] + "<br>" +
+    #         df['description'] + "<br>" +
+    #         "Days: " + df['days'] + "<br>" +
+    #         "Time: " + df['start_time'] + " - " + df['end_time']
+    #     )
+    df = df.copy()
+
+    df["happy_hour"] = (
+        df["days"] + " " +
+        df["start_time"] + "–" +
+        df["end_time"]
+    )
+
         # fig = px.scatter_map(
         #     df,
         #     lat='lat',
@@ -82,18 +89,21 @@ def create_map(df, dark_mode=False):
         #     height=800
         # )
 
-        fig = px.scatter_map(
-            df,
-            lat='lat',
-            lon='lon',
-            hover_name='name',
-            hover_data={},
-            custom_data=['happy_hour', 'address'],
-            zoom=12,
-            height=600
-        )
-        # fig.update_traces(cluster=dict(enabled=True))
-        
+    fig = px.scatter_mapbox(
+        df,
+        lat="lat",
+        lon="lon",
+        hover_name="name",
+        hover_data={},
+        custom_data=["happy_hour", "address"],
+        zoom=12,
+        height=600
+    )
+
+    fig.update_traces(
+        marker=dict(size=14),
+        cluster=dict(enabled=True)
+    )   
         # Update marker appearance
         # fig.update_traces(
         #     marker = dict(size=14, line=dict(width=2,
@@ -101,38 +111,43 @@ def create_map(df, dark_mode=False):
         #     hovertemplate='%{customdata[0]}<extra></extra>'
         # )
 
-
-         # Update marker appearance
-        fig.update_traces(
-            marker = dict(size=14),
-            hovertemplate='%{customdata[0]}<extra></extra>'
-        )
-        # Customize hover data to show our formatted text
-        fig.update_traces(customdata=df[['hover_text']])
-    else:
-        # Empty map centered on OKC
-        empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
-        fig = px.scatter_map(
-            empty_df,
-            lat='lat',
-            lon='lon',
-            zoom=12,
-            height=600
-        )
-        fig.update_traces(marker=dict(size=0))
-        # #fig.update_traces(cluster=dict(enabled=True))
-    # Set map style based on theme
-    map_style = "carto-darkmatter" if dark_mode else "open-street-map"
-    
     fig.update_layout(
-        mapbox_style=map_style,
-        margin=dict(l=0, r=0, t=0, b=0),
-        showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
+        mapbox_style="open-street-map",
+        margin=dict(l=0, r=0, t=0, b=0)
     )
-    
+
     return fig
+    #      # Update marker appearance
+    #     fig.update_traces(
+    #         marker = dict(size=14),
+    #         hovertemplate='%{customdata[0]}<extra></extra>'
+    #     )
+    #     # Customize hover data to show our formatted text
+    #     fig.update_traces(customdata=df[['hover_text']])
+    # else:
+    #     # Empty map centered on OKC
+    #     empty_df = pd.DataFrame({'lat': [35.4676], 'lon': [-97.5164]})
+    #     fig = px.scatter_mapbox(
+    #         empty_df,
+    #         lat='lat',
+    #         lon='lon',
+    #         zoom=12,
+    #         height=600
+    #     )
+    #     fig.update_traces(marker=dict(size=0))
+    #     # #fig.update_traces(cluster=dict(enabled=True))
+    # # Set map style based on theme
+    # map_style = "carto-darkmatter" if dark_mode else "open-street-map"
+    
+    # fig.update_layout(
+    #     mapbox_style=map_style,
+    #     margin=dict(l=0, r=0, t=0, b=0),
+    #     showlegend=False,
+    #     paper_bgcolor='rgba(0,0,0,0)',
+    #     plot_bgcolor='rgba(0,0,0,0)'
+    # )
+    
+    # return fig
 
 # Sidebar for adding locations
 sidebar = html.Div([
